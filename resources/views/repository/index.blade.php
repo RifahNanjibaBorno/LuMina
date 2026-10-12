@@ -1,0 +1,15 @@
+@extends('layouts.workspace')
+@section('title', request()->routeIs('projects.index') ? 'Projects' : 'Academic Repository')
+@section('content')
+<form method="get" action="{{ request()->routeIs('projects.index') ? route('projects.index') : route('repository.index') }}" class="repository-search">
+<div class="search-bar"><img src="{{ asset('assets/figma/search.svg') }}" alt=""><label class="sr-only" for="search-query">Search repository</label><input id="search-query" name="q" value="{{ request('q') }}" placeholder="Search projects, courses, students or resources…" maxlength="200"><button class="button button-primary">Search</button></div>
+<h2 class="filter-heading">Filters</h2><div class="filter-grid">
+    <label>Semester<select name="semester" data-filter><option value="">All semesters</option>@foreach($semesters as $semester)<option @selected(request('semester') === $semester)>{{ $semester }}</option>@endforeach</select></label>
+    <label>Course<select name="course" data-filter><option value="">All courses</option>@foreach($courses as $course)<option value="{{ $course->id }}" @selected((string)request('course') === (string)$course->id)>{{ $course->code }} · {{ $course->title }}</option>@endforeach</select></label>
+    <label>Technology<input name="technology" value="{{ request('technology') }}" placeholder="Any technology" maxlength="100"></label>
+    <label>Resource type<select name="type" data-filter><option value="">All types</option>@foreach(App\Models\AcademicItem::TYPES as $type)<option value="{{ $type }}" @selected(request('type') === $type)>{{ ucfirst($type) }}</option>@endforeach</select></label>
+</div><details class="advanced-filters"><summary>More filters</summary><label>Project domain<input name="domain" value="{{ request('domain') }}" placeholder="e.g. Education, Security" maxlength="100"></label><button class="button">Apply filters</button><a href="{{ route('repository.index') }}">Reset filters</a></details></form>
+<div class="result-heading"><h2>Repository results</h2><div><small>{{ $items->total() }} items found</small>@auth<a class="button" href="{{ route('items.create') }}">Upload new</a>@endauth</div></div>
+<div class="repository-results">@forelse($items as $item)<article class="card result-row"><div class="result-info"><span class="badge badge-{{ $item->type }}">{{ ucfirst($item->type) }}</span><div><h3><a href="{{ route('items.show', $item) }}">{{ $item->title }}</a></h3><p>{{ $item->course->code }} · {{ $item->technology ?: ($item->file_name ? strtoupper(pathinfo($item->file_name, PATHINFO_EXTENSION)) : ucfirst($item->type)) }} @if($item->domain) · {{ $item->domain }}@endif</p></div></div><a class="button" href="{{ route('items.show', $item) }}">{{ $item->type === 'project' ? 'View details' : 'View resource' }}</a></article>@empty<x-empty title="No matching results" description="Try a different search or clear the filters."><a class="button" href="{{ route('repository.index') }}">Clear filters</a></x-empty>@endforelse</div>
+<div class="pagination">{{ $items->links() }}</div>
+@endsection

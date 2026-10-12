@@ -1,0 +1,6 @@
+@extends('layouts.workspace')
+@section('title', auth()->user()->role === 'teacher' ? 'Students' : 'User management')
+@section('content')
+<form method="get" class="search-bar"><label class="sr-only" for="users-query">Search users</label><input id="users-query" name="q" value="{{ request('q') }}" placeholder="Search by name, university ID or email"><button class="button button-primary">Search</button></form>
+<section class="card user-list"><div class="table-scroll"><table><thead><tr><th>Name</th><th>University ID / Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody>@forelse($users as $member)<tr><td>{{ $member->name }}</td><td>{{ $member->university_id }}<small>{{ $member->email }}</small></td><td>{{ ucfirst($member->role) }}</td><td><span class="badge {{ $member->is_active ? 'badge-green' : 'badge-red' }}">{{ $member->is_active ? 'Active' : 'Disabled' }}</span></td><td>@can('admin')<a href="{{ route('users.edit', $member) }}">Manage</a>@endcan @if($member->portfolio_public && $member->is_active)<a href="{{ route('portfolio.public', $member->portfolio_slug) }}" target="_blank" rel="noopener">Portfolio</a>@endif</td></tr>@empty<tr><td colspan="5"><x-empty title="No matching users" description="Try another name or email." /></td></tr>@endforelse</tbody></table></div>{{ $users->links() }}</section>
+@endsection

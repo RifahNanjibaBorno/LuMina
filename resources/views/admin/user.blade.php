@@ -1,0 +1,6 @@
+@extends('layouts.workspace')
+@section('title', 'Manage user')
+@section('content')
+<form method="post" action="{{ route('users.update', $user) }}" class="card editor-form">@csrf @method('PUT')<h2>{{ $user->name }}</h2><div class="form-grid"><label>Full name<input name="name" value="{{ old('name', $user->name) }}" required></label><label>Email<input name="email" type="email" value="{{ old('email', $user->email) }}" required></label><label>Role<select name="role">@foreach(['student', 'teacher', 'admin'] as $role)<option value="{{ $role }}" @selected(old('role', $user->role) === $role)>{{ ucfirst($role) }}</option>@endforeach</select></label><label>Status<select name="is_active"><option value="1" @selected((bool)old('is_active', $user->is_active))>Active</option><option value="0" @selected(!(bool)old('is_active', $user->is_active))>Disabled</option></select></label></div><div class="form-actions"><a class="button" href="{{ route('users.index') }}">Cancel</a><button class="button button-primary">Save user</button></div></form>
+@if(auth()->id() !== $user->id)<form action="{{ route('users.destroy', $user) }}" method="post" data-confirm="Delete this user and all of their uploads permanently?" class="danger-action">@csrf @method('DELETE')<button class="button button-danger">Delete user</button></form>@endif
+@endsection

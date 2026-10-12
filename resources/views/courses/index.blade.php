@@ -1,0 +1,6 @@
+@extends('layouts.workspace')
+@section('title', 'Courses')
+@section('subtitle', 'Course-wise projects, resources and student memberships.')
+@section('content')
+<div class="result-heading"><h2>{{ auth()->user()->role === 'teacher' ? 'Assigned courses' : 'Course management' }}</h2>@can('admin')<a class="button button-primary" href="{{ route('courses.create') }}">Create course</a>@endcan</div><div class="course-grid">@forelse($courses as $course)<article class="card course-card"><span class="badge">{{ $course->code }}</span><h2><a href="{{ route('courses.show', $course) }}">{{ $course->title }}</a></h2><p class="muted">{{ $course->semester }} · {{ $course->teacher?->name ?? 'Teacher not assigned' }}</p><p>{{ $course->students_count }} students · {{ $course->items_count }} repository entries</p><div class="form-actions"><a class="button" href="{{ route('courses.show', $course) }}">Open course</a>@can('admin')<a href="{{ route('courses.edit', $course) }}">Edit</a>@endcan @if($course->is_archived)<span class="badge badge-red">Archived</span>@endif</div></article>@empty<x-empty title="No courses yet" description="Create a course to organize academic projects and resources." />@endforelse</div><div class="pagination">{{ $courses->links() }}</div>
+@endsection
