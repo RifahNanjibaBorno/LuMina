@@ -23,8 +23,8 @@ class DemoSeeder extends Seeder
             ['Rifah Nanjiba Borno', 'rifah@lumina.test', '0432320005101083', 'student', 'rifah-borno'],
             ['Tasnim Rahman', 'tasnim@lumina.test', '0432320005101092', 'student', 'tasnim-rahman'],
             ['Fayruz Humayra', 'fayruz@lumina.test', '0432320005101096', 'student', 'fayruz-humayra'],
-            ['Dr. Mahfida Amjad Dipa', 'teacher@lumina.test', null, 'teacher', 'mahfida-dipa'],
-            ['Administrator', 'admin@lumina.test', null, 'admin', 'administrator'],
+            ['Dr. Mahfida Amjad Dipa', 'teacher@gmail.com', null, 'teacher', 'mahfida-dipa'],
+            ['Administrator', 'admin@gmail.com', null, 'admin', 'administrator'],
         ];
         $members = collect();
         foreach ($people as [$name, $email, $universityId, $role, $slug]) {
