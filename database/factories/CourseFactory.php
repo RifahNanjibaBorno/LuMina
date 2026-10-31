@@ -18,7 +18,6 @@ class CourseFactory extends Factory
     public function definition(): array
     {
         return [
-            'code' => 'CSE'.fake()->unique()->numerify('###'),
             'title' => fake()->sentence(3),
             'semester' => 'Autumn 2026',
             'description' => fake()->paragraph(),

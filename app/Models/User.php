@@ -53,9 +53,9 @@ class User extends Authenticatable
         return $this->hasMany(AcademicItem::class);
     }
 
-    public function taughtCourses(): HasMany
+    public function taughtCourses(): BelongsToMany
     {
-        return $this->hasMany(Course::class, 'teacher_id');
+        return $this->belongsToMany(Course::class, 'course_teacher');
     }
 
     public function completion(): int

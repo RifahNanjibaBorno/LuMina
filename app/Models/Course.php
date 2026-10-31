@@ -5,7 +5,6 @@ namespace App\Models;
 use Database\Factories\CourseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -14,16 +13,11 @@ class Course extends Model
     /** @use HasFactory<CourseFactory> */
     use HasFactory;
 
-    protected $fillable = ['code', 'title', 'semester', 'description', 'teacher_id', 'is_archived'];
+    protected $fillable = ['title', 'semester', 'description', 'status'];
 
-    protected function casts(): array
+    public function teachers(): BelongsToMany
     {
-        return ['is_archived' => 'boolean'];
-    }
-
-    public function teacher(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'teacher_id');
+        return $this->belongsToMany(User::class, 'course_teacher');
     }
 
     public function students(): BelongsToMany
@@ -38,6 +32,6 @@ class Course extends Model
 
     public function isAccessibleTo(User $user): bool
     {
-        return $user->role === 'admin' || $this->teacher_id === $user->id || $this->students()->whereKey($user->id)->exists();
+        return $user->role === 'admin' || $this->teachers()->whereKey($user->id)->exists() || $this->students()->whereKey($user->id)->exists();
     }
 }

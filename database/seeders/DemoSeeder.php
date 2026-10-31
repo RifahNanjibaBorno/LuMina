@@ -59,7 +59,7 @@ class DemoSeeder extends Seeder
             [3, 'CSE403', 'Data Communication Study Guide', 'notes', null, null, 'A study resource covering network models, transmission media and error detection.'],
         ];
         foreach ($entries as [$owner, $code, $title, $type, $technology, $domain, $description]) {
-            $item = AcademicItem::firstOrCreate(['user_id' => $members[$owner]->id, 'title' => $title], ['course_id' => $courses[$code]->id, 'description' => $description, 'type' => $type, 'technology' => $technology, 'domain' => $domain, 'visibility' => 'public', 'is_featured' => $owner === 0 && $code !== 'CSE410', 'team_members' => $type === 'project' ? 'Rifah, Tasnim, Fayruz' : null]);
+            $item = AcademicItem::firstOrCreate(['user_id' => $members[$owner]->id, 'title' => $title], ['course_id' => $courses[$code]->id, 'description' => $description, 'type' => $type, 'technology' => $technology, 'domain' => $domain, 'visibility' => 'public', 'is_featured' => $owner === 0 && $code !== 'CSE410', 'team_members' => $type === 'project' ? 3 : null]);
             if ($item->wasRecentlyCreated) {
                 if ($type !== 'project') {
                     $content = $title."\n\n".$description."\n\nDemo academic resource for LUMiNA. Replace with your course materials.\n";

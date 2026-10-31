@@ -30,14 +30,16 @@ class SaveAcademicItemRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:200'],
             'description' => ['required', 'string', 'max:10000'],
-            'course_id' => ['required', 'integer', Rule::exists('courses', 'id')->where('is_archived', false)],
+            'course_id' => ['required', 'integer', Rule::exists('courses', 'id')->where('status', 'active')],
             'type' => ['required', Rule::in(AcademicItem::TYPES)],
             'technology' => ['nullable', 'string', 'max:255'],
             'domain' => ['nullable', 'string', 'max:100'],
-            'team_members' => ['nullable', 'string', 'max:255'],
+            'team_members' => ['nullable', 'integer', 'min:1'],
             'source_url' => ['nullable', 'url:http,https', 'max:255'],
             'visibility' => ['required', Rule::in(['private', 'course', 'public'])],
             'file' => ['nullable', 'file', 'mimes:pdf,docx,txt,zip,pptx,xlsx,csv', 'extensions:pdf,docx,txt,zip,pptx,xlsx,csv', 'max:20480'],
+            'files' => ['nullable', 'array'],
+            'files.*' => ['required', 'file', 'mimes:pdf,docx,txt,zip,pptx,xlsx,csv', 'extensions:pdf,docx,txt,zip,pptx,xlsx,csv', 'max:20480'],
         ];
     }
 

@@ -266,7 +266,8 @@ class PortfolioApplicationTest extends TestCase
     public function test_teacher_can_only_list_students_from_assigned_courses(): void
     {
         $teacher = User::factory()->teacher()->create();
-        $course = Course::factory()->create(['teacher_id' => $teacher->id]);
+        $course = Course::factory()->create();
+        $course->teachers()->attach($teacher);
         $member = User::factory()->create(['name' => 'Assigned Student']);
         User::factory()->create(['name' => 'Unassigned Student']);
         $course->students()->attach($member);
@@ -301,18 +302,22 @@ class PortfolioApplicationTest extends TestCase
         $this->assertDatabaseHas('course_user', ['course_id' => $course->id, 'user_id' => $student->id]);
     }
 
-    public function test_teacher_cannot_enroll_students(): void
+    public function test_assigned_teacher_can_enroll_students(): void
     {
         $teacher = User::factory()->teacher()->create();
-        $course = Course::factory()->create(['teacher_id' => $teacher->id]);
-        $this->actingAs($teacher)->put(route('courses.enroll', $course), ['students' => []])->assertForbidden();
+        $course = Course::factory()->create();
+        $course->teachers()->attach($teacher);
+        $student = User::factory()->create();
+        $this->actingAs($teacher)->put(route('courses.enroll', $course), ['students' => [$student->id]])->assertSessionHasNoErrors();
+        $this->assertTrue($course->students->contains($student));
     }
 
     public function test_admin_can_create_course_and_assign_teacher(): void
     {
         $teacher = User::factory()->teacher()->create();
-        $this->actingAs(User::factory()->admin()->create())->post(route('courses.store'), ['code' => 'CSE416', 'title' => 'Software Project Design', 'semester' => 'Autumn 2026', 'teacher_id' => $teacher->id])->assertSessionHasNoErrors()->assertRedirect();
-        $this->assertDatabaseHas('courses', ['code' => 'CSE416', 'teacher_id' => $teacher->id]);
+        $this->actingAs(User::factory()->admin()->create())->post(route('courses.store'), ['title' => 'Software Project Design', 'semester' => 'Autumn 2026', 'teachers' => [$teacher->id], 'status' => 'active'])->assertSessionHasNoErrors()->assertRedirect();
+        $course = Course::where('title', 'Software Project Design')->firstOrFail();
+        $this->assertTrue($course->teachers->contains($teacher));
     }
 
     #[TestWith(['profile.edit'])]

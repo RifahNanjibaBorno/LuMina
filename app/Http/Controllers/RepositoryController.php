@@ -19,13 +19,13 @@ class RepositoryController extends Controller
 {
     public function index(Request $request): View
     {
-        $request->validate(['q' => ['nullable', 'string', 'max:200'], 'semester' => ['nullable', 'string', 'max:80'], 'technology' => ['nullable', 'string', 'max:100'], 'domain' => ['nullable', 'string', 'max:100'], 'type' => ['nullable', 'in:project,report,notes,exam,assignment'], 'course' => ['nullable', 'integer']]);
+        $request->validate(['q' => ['nullable', 'string', 'max:200'], 'semester' => ['nullable', 'string', 'max:80'], 'technology' => ['nullable', 'string', 'max:100'], 'domain' => ['nullable', 'string', 'max:100'], 'type' => ['nullable', 'in:project,report,notes,exam,assignment,notice,material'], 'course' => ['nullable', 'integer']]);
         $query = AcademicItem::query()->visibleTo($request->user())->with(['course', 'user']);
         if ($request->filled('q')) {
             $term = '%'.$request->string('q')->toString().'%';
             $query->where(function (Builder $search) use ($term): void {
                 $search->where('title', 'like', $term)->orWhere('description', 'like', $term)->orWhere('technology', 'like', $term)
-                    ->orWhereHas('course', fn (Builder $course): Builder => $course->where('code', 'like', $term)->orWhere('title', 'like', $term))
+                    ->orWhereHas('course', fn (Builder $course): Builder => $course->where('title', 'like', $term))
                     ->orWhereHas('user', fn (Builder $user): Builder => $user->where('name', 'like', $term));
             });
         }
@@ -40,8 +40,8 @@ class RepositoryController extends Controller
                 $query->where('user_id', $request->user()->id);
             }
         }
-        $items = $query->latest('id')->paginate(10)->withQueryString();
-        $courses = Course::orderBy('code')->get();
+        $items = $query->latest('id')->get();
+        $courses = Course::orderBy('title')->get();
         $semesters = $courses->pluck('semester')->unique();
 
         return view('repository.index', compact('items', 'courses', 'semesters'));
@@ -62,9 +62,9 @@ class RepositoryController extends Controller
     private function form(Request $request, AcademicItem $item): View
     {
         $user = $request->user();
-        $courses = Course::where('is_archived', false)->when($user->role !== 'admin', function (Builder $q) use ($user): void {
-            $q->where(fn (Builder $course): Builder => $course->where('teacher_id', $user->id)->orWhereHas('students', fn (Builder $students): Builder => $students->where('users.id', $user->id)));
-        })->orderBy('code')->get();
+        $courses = Course::where('status', 'active')->when($user->role !== 'admin', function (Builder $q) use ($user): void {
+            $q->where(fn (Builder $course): Builder => $course->whereHas('teachers', fn (Builder $teachers): Builder => $teachers->where('users.id', $user->id))->orWhereHas('students', fn (Builder $students): Builder => $students->where('users.id', $user->id)));
+        })->orderBy('title')->get();
 
         return view('repository.form', compact('item', 'courses'));
     }
@@ -72,29 +72,38 @@ class RepositoryController extends Controller
     public function store(SaveAcademicItemRequest $request): RedirectResponse
     {
         $item = $request->user()->items()->create($this->itemData($request));
-        Activity::create(['user_id' => $request->user()->id, 'title' => $item->title, 'action' => 'Upload created', 'course_code' => $item->course->code]);
+        Activity::create(['user_id' => $request->user()->id, 'title' => $item->title, 'action' => 'Upload created', 'course_code' => (string) $item->course->id]);
 
         return redirect()->route('items.show', $item)->with('status', 'Your upload has been saved.');
     }
 
     public function update(SaveAcademicItemRequest $request, AcademicItem $item): RedirectResponse
     {
-        $oldPath = $item->file_path;
-        $item->update($this->itemData($request));
-        if ($request->hasFile('file') && $oldPath) {
-            Storage::disk('local')->delete($oldPath);
+        $oldPaths = array_column($item->uploadedFiles(), 'path');
+        $item->update($this->itemData($request, $item));
+        if ($request->hasFile('file') && $oldPaths) {
+            Storage::disk('local')->delete($oldPaths);
         }
-        Activity::create(['user_id' => $request->user()->id, 'title' => $item->title, 'action' => 'Upload updated', 'course_code' => $item->course->code]);
+        Activity::create(['user_id' => $request->user()->id, 'title' => $item->title, 'action' => 'Upload updated', 'course_code' => (string) $item->course->id]);
 
         return redirect()->route('items.show', $item)->with('status', 'Changes saved.');
     }
 
-    private function itemData(SaveAcademicItemRequest $request): array
+    /** @return array<string, mixed> */
+    private function itemData(SaveAcademicItemRequest $request, ?AcademicItem $item = null): array
     {
-        $data = $request->safe()->except('file');
+        $data = $request->safe()->except(['file', 'files']);
+        $uploads = $request->file('files', []);
+        $attachments = $item?->uploadedFiles() ?? [];
         if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $data += ['file_path' => $file->store('repository', 'local'), 'file_name' => Str::limit(basename($file->getClientOriginalName()), 240, ''), 'file_size' => $file->getSize()];
+            $uploads[] = $request->file('file');
+            $attachments = [];
+        }
+        foreach ($uploads as $file) {
+            $attachments[] = ['path' => $file->store('repository', 'local'), 'name' => Str::limit(basename($file->getClientOriginalName()), 240, ''), 'size' => $file->getSize()];
+        }
+        if ($uploads) {
+            $data += ['attachments' => $attachments, 'file_path' => $attachments[0]['path'], 'file_name' => $attachments[0]['name'], 'file_size' => array_sum(array_column($attachments, 'size'))];
         }
 
         return $data;
@@ -111,19 +120,19 @@ class RepositoryController extends Controller
     public function download(Request $request, AcademicItem $item): StreamedResponse
     {
         Gate::authorize('view', $item);
-        abort_unless($item->file_path && Storage::disk('local')->exists($item->file_path), 404);
+        $request->validate(['attachment' => ['nullable', 'integer', 'min:0']]);
+        $attachment = $item->uploadedFiles()[$request->integer('attachment')] ?? null;
+        abort_unless($attachment && Storage::disk('local')->exists($attachment['path']), 404);
         $item->increment('downloads');
-        Activity::create(['user_id' => $request->user()->id, 'title' => $item->title, 'action' => 'File downloaded', 'course_code' => $item->course->code]);
+        Activity::create(['user_id' => $request->user()->id, 'title' => $item->title, 'action' => 'File downloaded', 'course_code' => (string) $item->course->id]);
 
-        return Storage::disk('local')->download($item->file_path, $item->file_name, ['X-Content-Type-Options' => 'nosniff']);
+        return Storage::disk('local')->download($attachment['path'], $attachment['name'], ['X-Content-Type-Options' => 'nosniff']);
     }
 
     public function destroy(Request $request, AcademicItem $item): RedirectResponse
     {
         Gate::authorize('delete', $item);
-        if ($item->file_path) {
-            Storage::disk('local')->delete($item->file_path);
-        }
+        Storage::disk('local')->delete(array_column($item->uploadedFiles(), 'path'));
         Activity::create(['user_id' => $request->user()->id, 'title' => $item->title, 'action' => 'Upload removed']);
         $item->delete();
 

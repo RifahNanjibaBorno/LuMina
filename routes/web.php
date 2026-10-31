@@ -47,8 +47,12 @@ Route::middleware(['auth', EnsureAccountIsActive::class])->group(function (): vo
     });
     Route::middleware('can:staff')->group(function (): void {
         Route::resource('courses', CourseController::class);
+        Route::post('/course-assignments', [CourseController::class, 'assign'])->name('courses.assign');
         Route::put('/courses/{course}/students', [CourseController::class, 'enroll'])->name('courses.enroll');
         Route::get('/users', [AdminController::class, 'users'])->name('users.index');
+        Route::get('/users/create', [AdminController::class, 'create'])->name('users.create');
+        Route::post('/users', [AdminController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/profile', [AdminController::class, 'show'])->name('users.show');
         Route::get('/users/{user}/edit', [AdminController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [AdminController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [AdminController::class, 'destroy'])->name('users.destroy');

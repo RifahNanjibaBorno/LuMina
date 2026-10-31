@@ -14,7 +14,7 @@ class DashboardController extends Controller
     public function __invoke(Request $request): View
     {
         $user = $request->user();
-        $courses = Course::query()->withCount('students')->when($user->role === 'teacher', fn ($query) => $query->where('teacher_id', $user->id))->when($user->role === 'student', fn ($query) => $query->whereHas('students', fn ($students) => $students->where('users.id', $user->id)))->orderBy('code')->get();
+        $courses = Course::query()->withCount('students')->when($user->role === 'teacher', fn ($query) => $query->whereHas('teachers', fn ($teachers) => $teachers->where('users.id', $user->id)))->when($user->role === 'student', fn ($query) => $query->whereHas('students', fn ($students) => $students->where('users.id', $user->id)))->orderBy('title')->get();
         $items = AcademicItem::query()->visibleTo($user)->with(['course', 'user'])->when($user->role === 'student', fn ($query) => $query->where('user_id', $user->id))->when($user->role === 'teacher', fn ($query) => $query->whereIn('course_id', $courses->modelKeys()));
         $stats = [
             'projects' => (clone $items)->where('type', 'project')->count(),

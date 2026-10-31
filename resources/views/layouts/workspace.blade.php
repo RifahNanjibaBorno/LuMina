@@ -27,6 +27,6 @@
         <div><button class="menu-button" type="button" data-menu-toggle aria-controls="workspace-navigation" aria-expanded="false">☰ <span>Menu</span></button><h1>@yield('title')</h1><p>@yield('subtitle', 'Automated portfolio & academic repository')</p></div>
         @auth<a class="account-chip" href="{{ route('profile.edit') }}"><span><strong>{{ $account->name }}</strong><small>{{ ucfirst($role) }}</small></span><span class="avatar-mini">@if($account->avatar_path)<img src="{{ route('profile.avatar') }}" alt="">@endif</span></a>@else<a class="button" href="{{ route('login') }}">Log in</a>@endauth
     </header>
-    <div class="workspace-content"><x-flash />@yield('content')</div>
+    <div class="workspace-content">@yield('content')</div>
 </main>
 @endsection
