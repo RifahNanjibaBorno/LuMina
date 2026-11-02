@@ -2,7 +2,7 @@
 @section('title', 'Home')
 @section('body-class', 'landing-body')
 @section('body')
-<header class="landing-header"><x-brand :subtitle="false" /><nav aria-label="Main navigation"><a class="current" href="{{ route('home') }}">Home</a><a href="{{ route('repository.index') }}">Repository</a><a href="#about">About</a>@auth<a class="button button-primary" href="{{ route('dashboard') }}">My workspace</a>@else<a class="button" href="{{ route('login') }}">Log in</a><a class="button button-primary" href="{{ route('register') }}">Create account</a>@endauth</nav></header>
+<header class="landing-header"><x-brand :light="true" :subtitle="false" /><nav aria-label="Main navigation"><a class="current" href="{{ route('home') }}">Home</a><a href="{{ route('repository.index') }}">Repository</a><a href="#about">About</a>@auth<a class="button button-primary" href="{{ route('dashboard') }}">My workspace</a>@else<a class="button" href="{{ route('login') }}">Log in</a><a class="button button-primary" href="{{ route('register') }}">Create account</a>@endauth</nav></header>
 <main class="landing-content">
     <section class="hero">
         <div class="hero-copy"><h1>Turn the academic <br class="hero-break">journey into a portfolio <br class="hero-break">that speaks.</h1><div class="hero-actions"><a class="button button-primary" href="{{ auth()->check() ? (auth()->user()->role === 'student' ? route('portfolio.edit') : route('dashboard')) : route('register') }}">Build my portfolio</a><a class="button" href="{{ route('repository.index') }}">Explore repository</a></div></div>
