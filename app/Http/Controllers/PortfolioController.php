@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class PortfolioController extends Controller
 {
@@ -72,6 +73,14 @@ class PortfolioController extends Controller
         $user->increment('portfolio_views');
 
         return $this->renderPortfolio($user, false);
+    }
+
+    public function avatar(string $slug): BinaryFileResponse
+    {
+        $user = User::where('portfolio_slug', $slug)->where('portfolio_public', true)->where('is_active', true)->firstOrFail();
+        abort_unless($user->avatar_path && Storage::disk('local')->exists($user->avatar_path), 404);
+
+        return response()->file(Storage::disk('local')->path($user->avatar_path), ['Cache-Control' => 'private, no-store']);
     }
 
     private function renderPortfolio(User $user, bool $preview): View

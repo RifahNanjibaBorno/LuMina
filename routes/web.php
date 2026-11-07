@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::view('/', 'home')->name('home');
 Route::get('/repository', [RepositoryController::class, 'index'])->middleware(EnsureAccountIsActive::class)->name('repository.index');
 Route::get('/repository/{item}', [RepositoryController::class, 'show'])->middleware(EnsureAccountIsActive::class)->whereNumber('item')->name('items.show');
+Route::get('/p/{slug}/avatar', [PortfolioController::class, 'avatar'])->name('portfolio.avatar');
 Route::get('/p/{slug}', [PortfolioController::class, 'show'])->name('portfolio.public');
 
 Route::middleware('guest')->group(function (): void {

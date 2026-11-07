@@ -9,7 +9,6 @@ use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
@@ -245,22 +244,16 @@ class PortfolioApplicationTest extends TestCase
     public function test_resume_import_creates_a_draft_without_overwriting_profile(): void
     {
         Storage::fake('local');
-        Process::preventStrayProcesses();
-        Process::fake(['*resume_parser.py*' => Process::result(output: json_encode(['text_found' => true, 'name' => 'Imported Student', 'skills' => 'Python']))]);
         $user = User::factory()->create(['profile' => ['skills' => 'Laravel']]);
-        $file = UploadedFile::fake()->create('resume.pdf', 100, 'application/pdf');
+        $file = $this->resumePdf("Imported Student\nSkills: Python");
         $this->actingAs($user)->post(route('portfolio.import'), ['resume' => $file])->assertRedirect(route('profile.edit'))->assertSessionHas('resume_draft.skills', 'Python');
         $this->assertSame('Laravel', $user->fresh()->profile['skills']);
         Storage::disk('local')->assertExists($user->fresh()->resume_path);
-        Process::assertRan(fn ($process): bool => in_array(resource_path('python/resume_parser.py'), $process->command, true));
     }
 
     public function test_unreadable_resume_returns_a_validation_error(): void
     {
-        Process::preventStrayProcesses();
-        Process::fake(['*resume_parser.py*' => Process::result(output: json_encode(['text_found' => false]))]);
-        $this->actingAs(User::factory()->create())->post(route('portfolio.import'), ['resume' => UploadedFile::fake()->create('scan.pdf', 100, 'application/pdf')])->assertSessionHasErrors('resume');
-        Process::assertRan(fn ($process): bool => in_array(resource_path('python/resume_parser.py'), $process->command, true));
+        $this->actingAs(User::factory()->create())->post(route('portfolio.import'), ['resume' => $this->resumePdf('')])->assertSessionHasErrors('resume');
     }
 
     public function test_teacher_can_only_list_students_from_assigned_courses(): void
@@ -274,23 +267,38 @@ class PortfolioApplicationTest extends TestCase
         $this->actingAs($teacher)->get(route('users.index'))->assertOk()->assertSee('Assigned Student')->assertDontSee('Unassigned Student');
     }
 
-    public function test_resume_process_failure_returns_a_form_error(): void
+    public function test_invalid_docx_returns_a_form_error(): void
     {
-        Process::preventStrayProcesses();
-        Process::fake(['*resume_parser.py*' => function (): never {
-            throw new \RuntimeException('Process unavailable');
-        }]);
-        $this->actingAs(User::factory()->create())->post(route('portfolio.import'), ['resume' => UploadedFile::fake()->create('resume.pdf', 100, 'application/pdf')])->assertSessionHasErrors('resume');
+        $this->actingAs(User::factory()->create())->post(route('portfolio.import'), [
+            'resume' => UploadedFile::fake()->create('resume.docx', 100, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+        ])->assertSessionHasErrors('resume');
+    }
+
+    public function test_docx_import_reads_sections_and_contacts(): void
+    {
+        Storage::fake('local');
+        $path = tempnam(sys_get_temp_dir(), 'resume');
+        $archive = new \ZipArchive;
+        $archive->open($path, \ZipArchive::OVERWRITE);
+        $archive->addFromString('[Content_Types].xml', '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+        $archive->addFromString('word/document.xml', '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Student Example</w:t></w:r></w:p><w:p><w:r><w:t>student@example.test</w:t></w:r></w:p><w:p><w:r><w:t>Skills: Laravel</w:t></w:r></w:p><w:p><w:r><w:t>Education: BSc in CSE</w:t></w:r></w:p></w:body></w:document>');
+        $archive->close();
+        try {
+            $this->actingAs(User::factory()->create())->post(route('portfolio.import'), [
+                'resume' => UploadedFile::fake()->createWithContent('resume.docx', file_get_contents($path)),
+            ])->assertSessionHasNoErrors()->assertSessionHas('resume_draft.skills', 'Laravel')
+                ->assertSessionHas('resume_draft.education', 'BSc in CSE')
+                ->assertSessionHas('resume_draft.email', 'student@example.test');
+        } finally {
+            @unlink($path);
+        }
     }
 
     public function test_failed_pdf_extraction_does_not_replace_the_resume(): void
     {
-        Process::preventStrayProcesses();
-        Process::fake(['*resume_parser.py*' => Process::result(exitCode: 1)]);
         $user = User::factory()->create(['resume_name' => 'existing.pdf', 'resume_path' => 'resumes/existing.pdf']);
         $this->actingAs($user)->post(route('portfolio.import'), ['resume' => UploadedFile::fake()->create('invalid.pdf', 100, 'application/pdf')])->assertSessionHasErrors('resume');
         $this->assertSame('existing.pdf', $user->fresh()->resume_name);
-        Process::assertRan(fn ($process): bool => in_array(resource_path('python/resume_parser.py'), $process->command, true));
     }
 
     public function test_admin_can_assign_student_course_membership(): void
@@ -327,5 +335,69 @@ class PortfolioApplicationTest extends TestCase
     public function test_student_editor_pages_render(string $route): void
     {
         $this->actingAs(User::factory()->create())->get(route($route))->assertOk();
+    }
+
+    public function test_public_portfolio_uses_resume_layout_and_public_photo(): void
+    {
+        Storage::fake('local');
+        $photo = UploadedFile::fake()->image('portrait.jpg')->store('avatars', 'local');
+        $user = User::factory()->create(['portfolio_slug' => 'resume-student', 'portfolio_public' => true, 'avatar_path' => $photo, 'visible_sections' => ['bio', 'links', 'education', 'experience'], 'profile' => ['bio' => 'Student biography', 'education' => 'BSc in CSE', 'experience' => 'Developer internship', 'phone' => '01712345678']]);
+
+        $this->get(route('portfolio.public', $user->portfolio_slug))->assertOk()
+            ->assertSee('resume-masthead')->assertSee('Student biography')->assertSee('BSc in CSE')
+            ->assertSee('Developer internship')->assertSee('01712345678')->assertSee($user->email)
+            ->assertSee(route('portfolio.avatar', $user->portfolio_slug));
+        $this->get(route('portfolio.avatar', $user->portfolio_slug))->assertOk();
+    }
+
+    public function test_private_inactive_and_missing_portfolio_photos_are_not_accessible(): void
+    {
+        Storage::fake('local');
+        $photo = UploadedFile::fake()->image('portrait.jpg')->store('avatars', 'local');
+        $user = User::factory()->create(['portfolio_slug' => 'private-photo', 'portfolio_public' => false, 'avatar_path' => $photo]);
+        $this->get(route('portfolio.avatar', $user->portfolio_slug))->assertNotFound();
+        $user->forceFill(['portfolio_public' => true, 'is_active' => false])->save();
+        $this->get(route('portfolio.avatar', $user->portfolio_slug))->assertNotFound();
+        $user->forceFill(['is_active' => true, 'avatar_path' => null])->save();
+        $this->get(route('portfolio.avatar', $user->portfolio_slug))->assertNotFound();
+    }
+
+    public function test_preview_uses_resume_layout_without_publishing_contact_details(): void
+    {
+        $user = User::factory()->create(['visible_sections' => ['bio'], 'profile' => ['bio' => 'Private biography', 'phone' => '01712345678']]);
+        $this->actingAs($user)->get(route('portfolio.preview'))->assertOk()
+            ->assertSee('resume-masthead')->assertSee('Private preview')->assertSee('Private biography')
+            ->assertDontSee('01712345678')->assertDontSee('mailto:'.$user->email);
+        $this->assertFalse($user->fresh()->portfolio_public);
+    }
+
+    private function resumePdf(string $text): UploadedFile
+    {
+        $stream = 'BT /F1 12 Tf 50 740 Td ';
+        foreach (explode("\n", $text) as $line) {
+            $stream .= '('.str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $line).') Tj 0 -20 Td ';
+        }
+        $stream .= 'ET';
+        $objects = [
+            '<< /Type /Catalog /Pages 2 0 R >>',
+            '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+            '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+            '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+            '<< /Length '.strlen($stream)." >>\nstream\n".$stream."\nendstream",
+        ];
+        $pdf = "%PDF-1.4\n";
+        $offsets = [];
+        foreach ($objects as $index => $object) {
+            $offsets[] = strlen($pdf);
+            $pdf .= ($index + 1)." 0 obj\n".$object."\nendobj\n";
+        }
+        $xref = strlen($pdf);
+        $pdf .= "xref\n0 6\n0000000000 65535 f \n";
+        foreach ($offsets as $offset) {
+            $pdf .= sprintf("%010d 00000 n \n", $offset);
+        }
+        $pdf .= "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n".$xref."\n%%EOF";
+
+        return UploadedFile::fake()->createWithContent('resume.pdf', $pdf);
     }
 }

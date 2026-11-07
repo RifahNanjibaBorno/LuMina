@@ -54,3 +54,45 @@ fieldset{min-width:0}.auth-form-area,.auth-card,.profile-grid>*{min-width:0}.sec
 .course-table-actions{display:flex;align-items:center;gap:8px;white-space:nowrap}.course-table-actions form{margin:0}.course-table-actions .button{min-width:0;min-height:36px;padding:8px 14px;font-size:12px}.course-table-actions .button-danger{background:#c92a2a;border-color:#c92a2a;color:#fff}.course-table-actions .button-danger:hover{background:#a61e1e;border-color:#a61e1e;color:#fff}.course-name-link{font-weight:600;text-decoration:none}.course-name-link:hover{text-decoration:underline}.courses-data-card table td{vertical-align:middle}
 
 .repository-table-actions{display:flex;flex-direction:row;align-items:center;gap:8px;white-space:nowrap}.repository-table-actions .button{min-width:0;min-height:34px;padding:8px 12px;font-size:12px;overflow-wrap:anywhere;max-width:260px}.repository-data-card table td{vertical-align:middle}.repository-data-card td>small{display:block;margin-top:4px;color:var(--muted)}
+
+/* Shared resume layout for public portfolios and private previews. */
+.resume-page{background:#eef0f3;color:#323b49;font-family:Arial,Helvetica,sans-serif}
+.resume-toolbar{max-width:1120px;margin:0 auto;padding:22px 0;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.resume-toolbar .public-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.resume-sheet{max-width:1120px;margin:0 auto 48px;background:#fff;box-shadow:0 12px 50px #17243312}
+.resume-masthead{position:relative;display:grid;grid-template-columns:31% 69%;min-height:260px;background:#313b4b;color:#fff;align-items:center}
+.resume-identity{grid-column:2;padding:48px 50px 48px 65px;min-width:0}
+.resume-identity h1{font-size:clamp(30px,4vw,51px);font-weight:750;letter-spacing:1px;text-transform:uppercase;color:inherit;line-height:1.12;overflow-wrap:anywhere}
+.resume-identity p{margin-top:16px;font-size:24px;font-weight:400;text-transform:uppercase;line-height:1.35}
+.resume-portrait{position:absolute;left:3.7%;top:105px;width:24%;aspect-ratio:1;border:7px solid white;border-radius:50%;overflow:hidden;background:#566274;display:grid;place-items:center;z-index:1}
+.resume-portrait img{width:100%;height:100%;object-fit:cover}
+.resume-portrait>span{font-size:70px;color:#fff;letter-spacing:3px}
+.resume-columns{display:grid;grid-template-columns:31% 69%;min-height:1000px}
+.resume-sidebar{background:#e4e4e4;padding:165px 38px 60px;min-width:0}
+.resume-side-section+.resume-side-section{margin-top:52px}
+.resume-side-section h2{font-size:24px;letter-spacing:3px;text-transform:uppercase;font-weight:750;color:#323b49;border-bottom:1.5px solid #414b56;padding-bottom:10px;margin-bottom:17px;overflow-wrap:anywhere}
+.resume-side-section p,.resume-side-section li{font-size:16px;line-height:1.65}
+.resume-contact{list-style:none;padding:0;margin:0;display:grid;gap:20px}
+.resume-contact li{display:flex;align-items:flex-start;gap:13px;min-width:0}
+.resume-contact li>span:first-child{width:20px;flex-shrink:0;font-size:20px;line-height:1.4}
+.resume-contact a{color:inherit;overflow-wrap:anywhere;min-width:0}
+.resume-contact a:hover,.resume-source:hover{text-decoration:underline}
+.resume-contact small{display:block;font-size:12px;color:#4c5664;line-height:1.5}
+.resume-skills{list-style:disc;margin:0;padding-left:18px;display:grid;gap:8px}
+.resume-main{padding:65px 54px 65px 96px;min-width:0}
+.resume-section{position:relative;margin-bottom:44px}
+.resume-section:last-child{margin-bottom:0}
+.resume-section::before{content:"";position:absolute;left:-51px;top:24px;bottom:0;border-left:1px solid #465461}
+.resume-section-icon{position:absolute;left:-70px;top:0;width:39px;height:39px;border-radius:50%;background:#313b4b;color:white;display:grid;place-items:center}
+.resume-section-icon svg{width:25px;height:25px}
+.resume-section>h2{font-size:26px;line-height:1.4;letter-spacing:3px;text-transform:uppercase;font-weight:750;color:#323b49;padding-bottom:8px;border-bottom:1.5px solid #435a60;margin-bottom:15px;overflow-wrap:anywhere}
+.resume-entry{position:relative;font-size:17px;line-height:1.6;overflow-wrap:anywhere}
+.resume-entry::before{content:"";position:absolute;left:-55px;top:10px;width:9px;height:9px;border:1px solid #465461;background:white;border-radius:50%}
+.resume-entry+.resume-entry{margin-top:28px}
+.resume-entry h3{font-size:20px;font-weight:700;color:#323b49}
+.resume-project-meta{font-size:14px;color:#5c6571;margin:4px 0 12px}
+.resume-source{display:inline-block;margin-top:10px;font-size:14px;font-weight:600;color:#344b60}
+.resume-footer{padding:20px;text-align:center;font-size:11px;color:#707782;letter-spacing:1px;border-top:1px solid #edf0f2}
+@media(max-width:1160px){.resume-toolbar{padding:18px 24px}.resume-sheet{margin:0 24px 40px}.resume-sidebar{padding-left:26px;padding-right:26px}.resume-main{padding-right:35px;padding-left:83px}.resume-identity{padding-left:48px}.resume-side-section h2{font-size:20px;letter-spacing:2px}}
+@media(max-width:700px){.resume-toolbar{padding:16px;flex-wrap:wrap}.resume-toolbar .button{padding:8px 12px;font-size:12px}.resume-sheet{margin:0 12px 24px}.resume-masthead{display:flex;flex-direction:column;padding:30px 22px;gap:22px;text-align:center;min-height:0}.resume-portrait{position:static;width:145px;border-width:5px;flex-shrink:0}.resume-portrait>span{font-size:48px}.resume-identity{padding:0}.resume-identity h1{font-size:32px}.resume-identity p{font-size:18px;margin-top:10px}.resume-columns{grid-template-columns:1fr;min-height:0}.resume-sidebar{padding:32px 26px}.resume-side-section+.resume-side-section{margin-top:30px}.resume-side-section h2{font-size:20px}.resume-main{padding:36px 24px 36px 72px}.resume-section>h2{font-size:21px;letter-spacing:2px}.resume-section-icon{left:-51px;width:32px;height:32px}.resume-section-icon svg{width:21px;height:21px}.resume-section::before{left:-35px;top:22px}.resume-entry::before{left:-39px}.resume-entry{font-size:15px}.resume-section{margin-bottom:32px}}
+@media print{.resume-toolbar,.resume-footer{display:none!important}.resume-page{background:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}.resume-sheet{margin:0;max-width:none;box-shadow:none}.resume-masthead{display:grid;grid-template-columns:31% 69%;min-height:190px;padding:0;text-align:left}.resume-portrait{position:absolute;left:3.7%;top:65px;width:24%;border-width:5px}.resume-identity{grid-column:2;padding:28px 30px 28px 40px}.resume-identity h1{font-size:32px}.resume-identity p{font-size:17px}.resume-columns{grid-template-columns:31% 69%;min-height:850px}.resume-sidebar{padding:125px 22px 35px}.resume-side-section h2{font-size:17px;letter-spacing:2px}.resume-side-section p,.resume-side-section li{font-size:12px}.resume-side-section+.resume-side-section{margin-top:30px}.resume-main{padding:40px 30px 40px 65px}.resume-section>h2{font-size:20px;letter-spacing:2px}.resume-entry{font-size:13px}.resume-entry h3{font-size:16px}.resume-section{break-inside:avoid}.resume-section-icon{left:-48px;width:30px;height:30px}.resume-section::before{left:-33px}.resume-entry::before{left:-37px}}
