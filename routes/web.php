@@ -30,6 +30,7 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware(['auth', EnsureAccountIsActive::class])->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/admin/google-analytics', [AdminController::class, 'analytics'])->middleware('can:admin')->name('admin.analytics');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/profile/avatar', [ProfileController::class, 'avatar'])->name('profile.avatar');

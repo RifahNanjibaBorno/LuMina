@@ -2,6 +2,11 @@
 
 return [
 
+    'google_analytics' => [
+        'property_id' => env('GOOGLE_ANALYTICS_PROPERTY_ID', '563226858'),
+        'credentials_path' => env('GOOGLE_ANALYTICS_CREDENTIALS_PATH', storage_path('app/private/google-analytics.json')),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

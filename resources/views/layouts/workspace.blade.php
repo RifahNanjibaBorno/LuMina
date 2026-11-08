@@ -5,7 +5,7 @@
     $account = auth()->user();
     $role = $account?->role ?? 'guest';
     $navigation = match($role) {
-        'admin' => [['dashboard', 'Overview'], ['users.index', 'Users'], ['courses.index', 'Courses'], ['repository.index', 'Resources'], ['monitoring', 'Monitoring']],
+        'admin' => [['dashboard', 'Overview'], ['users.index', 'Users'], ['courses.index', 'Courses'], ['repository.index', 'Resources'], ['monitoring', 'Monitoring'], ['admin.analytics', 'Google Analytics']],
         'teacher' => [['dashboard', 'Dashboard'], ['courses.index', 'Courses'], ['users.index', 'Students'], ['projects.index', 'Projects'], ['repository.index', 'Resources']],
         'student' => [['dashboard', 'Dashboard'], ['profile.edit', 'My Profile'], ['portfolio.edit', 'Portfolio Builder'], ['projects.index', 'Projects'], ['repository.index', 'Repository']],
         default => [['home', 'Home'], ['repository.index', 'Repository'], ['login', 'Log in'], ['register', 'Create account']],

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\User;
+use App\Services\GoogleAnalytics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -15,6 +16,32 @@ use Illuminate\View\View;
 
 class AdminController extends Controller
 {
+    public function analytics(Request $request, GoogleAnalytics $analytics): View
+    {
+        Gate::authorize('admin');
+        $validated = $request->validate(['days' => ['sometimes', 'integer', 'in:7,30,90']]);
+        $days = (int) ($validated['days'] ?? 30);
+        $configured = $analytics->configured();
+        $report = null;
+        $error = null;
+
+        if ($configured) {
+            try {
+                $report = $analytics->report($days);
+            } catch (\Exception) {
+                $error = 'Google Analytics could not be loaded. Check the service account credentials, property access and Google Analytics Data API, then try again.';
+            }
+        }
+
+        return view('admin.analytics', [
+            'days' => $days,
+            'configured' => $configured,
+            'report' => $report,
+            'error' => $error,
+            'propertyId' => config('services.google_analytics.property_id'),
+        ]);
+    }
+
     public function users(Request $request): View
     {
         Gate::authorize('staff');
